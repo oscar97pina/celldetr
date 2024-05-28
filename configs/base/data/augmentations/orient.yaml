@@ -1,0 +1,5 @@
+- name: hflip
+  p: 0.5
+- name: vflip
+  p: 0.5
+- name: rotate90

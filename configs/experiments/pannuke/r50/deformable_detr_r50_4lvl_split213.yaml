@@ -1,0 +1,15 @@
+__base__:
+  - configs/experiments/pannuke/r50/deformable_detr_r50_4lvl_split123.yaml
+experiment:
+  name: defdetr_r50_4lvl_split213
+  output_name: defdetr_r50_4lvl_split213.pth
+dataset:
+  train:
+    fold: fold2
+  val:
+    fold: fold1
+  test:
+    fold: fold3
+transforms:
+  normalize:
+    __file__: configs/base/data/normalize/pannuke_2.yaml

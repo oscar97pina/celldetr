@@ -1,0 +1,7 @@
+name: SetCriterion
+class_coef: 1.0
+bbox_coef: 5.0
+giou_coef: 2.0
+mask_coef: 1.0
+dice_coef: 1.0
+focal_alpha: 0.25

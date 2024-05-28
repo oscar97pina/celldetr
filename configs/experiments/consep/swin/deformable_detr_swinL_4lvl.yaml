@@ -1,0 +1,97 @@
+experiment:
+  wandb: True
+  project: deformable_celldetr_consep
+  name: defdetr_swinL_4lvl_consep
+  output_dir: ./
+  output_name: defdetr_swinL_4lvl_consep.pth
+  seed: 42
+  resume: False
+evaluation:
+  interval: 10
+  best_criteria: th04
+  thresholds:
+    - 0.4
+dataset:
+  train:
+    __file__: configs/base/data/consep.yaml
+    fold: train
+  val:
+    __file__: configs/base/data/consep.yaml
+    fold: val
+  test:
+    __file__: configs/base/data/consep.yaml
+    fold: test
+transforms:
+  augmentations:
+    - name: elastic
+      p: 0.2
+      alpha: 0.5
+      sigma: 0.25
+    - name: hflip
+      p: 0.5
+    - name: vflip
+      p: 0.5
+    - name: rotate90
+    - name: blur
+      p: 0.2
+      kernel_size: 9
+      sigma: [0.2, 1.0]
+    - name: hedjitter
+      p: 0.2
+      alpha: 0.04
+      beta: 0.04
+    - name: randomcrop
+      p: 1.0
+      size: 250
+    - name: resizedcrop
+      p: 0.2
+      size: 250
+      scale: [0.8, 1.0]
+  normalize:
+    __file__: configs/base/data/normalize/pannuke_1.yaml
+model:
+  __file__: configs/base/model/detr/deformable_detr_4lvl.yaml
+  num_classes: 4
+  backbone:
+    __file__: configs/base/model/backbone/swinL_4lvl.yaml
+  window:
+    size: 250
+    stride: 187
+optimizer:
+  epochs: 100
+  weight_decay: 0.0001
+  clip_max_norm: 0.1
+  lr_base : 0.0002
+  lr_auto_scale: True
+  lr_drop_steps:
+    - 70
+    - 90
+  lr_drop_factor: 0.1
+  params:
+    - names:
+      - backbone.0
+      lr_mult: 0.1
+    - names:
+      - sampling_offsets
+      - reference_points
+      lr_mult: 0.1
+matcher:
+  __file__: configs/base/matcher.yaml
+loss:
+  __file__: configs/base/loss.yaml
+loader:
+  train:
+    batch_size: 2
+    num_workers: 8
+    shuffle: True
+    drop_last: True
+  val:
+    batch_size: 2
+    num_workers: 8
+    shuffle: False
+    drop_last: False
+  test:
+    batch_size: 2
+    num_workers: 8
+    shuffle: False
+    drop_last: False

@@ -1,0 +1,4 @@
+name: HungarianMatcher
+cost_class: 2
+cost_bbox: 5
+cost_giou: 2

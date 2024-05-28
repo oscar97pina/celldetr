@@ -1,0 +1,71 @@
+experiment:
+  wandb: True
+  project: deformable_celldetr
+  name: defdetr_swinL_4lvl_split123
+  output_dir: ./
+  output_name: defdetr_swinL_4lvl_split123.pth
+  seed: 42
+  resume: False
+evaluation:
+  interval: 10
+  best_criteria: th04
+  thresholds:
+    - 0.4
+dataset:
+  train:
+    __file__: configs/base/data/pannuke.yaml
+    fold: fold1
+  val:
+    __file__: configs/base/data/pannuke.yaml
+    fold: fold2
+  test:
+    __file__: configs/base/data/pannuke.yaml
+    fold: fold3
+transforms:
+  augmentations:
+    __file__: configs/base/data/augmentations/orient_geo_hed.yaml
+  normalize:
+    __file__: configs/base/data/normalize/pannuke_1.yaml
+model:
+  __file__: configs/base/model/detr/deformable_detr_4lvl.yaml
+  num_classes: 5
+  backbone:
+    __file__: configs/base/model/backbone/swinL_4lvl.yaml
+optimizer:
+  epochs: 100
+  weight_decay: 0.0001
+  clip_max_norm: 0.1
+  lr_base : 0.0002
+  lr_auto_scale: True
+  lr_drop_steps:
+    - 70
+    - 90
+  lr_drop_factor: 0.1
+  params:
+    - names:
+      - backbone.0
+      lr_mult: 0.1
+    - names:
+      - sampling_offsets
+      - reference_points
+      lr_mult: 0.1
+matcher:
+  __file__: configs/base/matcher.yaml
+loss:
+  __file__: configs/base/loss.yaml
+loader:
+  train:
+    batch_size: 2
+    num_workers: 8
+    shuffle: True
+    drop_last: True
+  val:
+    batch_size: 2
+    num_workers: 8
+    shuffle: False
+    drop_last: False
+  test:
+    batch_size: 2
+    num_workers: 8
+    shuffle: False
+    drop_last: False

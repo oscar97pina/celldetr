@@ -1,0 +1,7 @@
+name: swin_L_384_22k
+dilation: False
+frozen_stages: -1
+return_layers:
+  - 2
+  - 3
+  - 4

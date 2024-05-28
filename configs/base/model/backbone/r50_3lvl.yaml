@@ -1,0 +1,8 @@
+name: resnet50
+dilation: False
+frozen_bn: True
+frozen_stages: 1
+return_layers:
+  - 2
+  - 3
+  - 4

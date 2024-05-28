@@ -1,0 +1,23 @@
+- name: elastic
+  p: 0.2
+  alpha: 0.5
+  sigma: 0.25
+- name: hflip
+  p: 0.5
+- name: vflip
+  p: 0.5
+- name: rotate90
+- name: blur
+  p: 0.2
+  kernel_size: 9
+  sigma: [0.2, 1.0]
+- name: cjitter
+  p: 0.2
+  brightness: 0.25
+  contrast: 0.1
+  saturation: 0.25
+  hue: 0.05
+- name: resizedcrop
+  p: 0.2
+  size: 256
+  scale: [0.8, 1.0]

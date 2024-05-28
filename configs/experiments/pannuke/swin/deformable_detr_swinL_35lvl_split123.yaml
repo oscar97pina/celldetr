@@ -1,0 +1,9 @@
+__base__:
+  - configs/experiments/pannuke/swin/deformable_detr_swinL_4lvl_split123.yaml
+experiment:
+  name: defdetr_swinL_35lvl_split123
+  output_name: defdetr_swinL_35lvl_split123.pth
+model:
+  __file__: configs/base/model/detr/deformable_detr_4lvl.yaml
+  backbone:
+    __file__: configs/base/model/backbone/swinL_3lvl.yaml

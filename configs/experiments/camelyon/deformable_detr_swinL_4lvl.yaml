@@ -1,0 +1,30 @@
+__base__:
+  - configs/experiments/pannuke/swin/deformable_detr_swinL_4lvl_split123.yaml
+experiment:
+  project: deformable_celldetr_camelyon16
+  name: deformable_celldetr_swinL_camelyon16
+  evaluation:
+inference:
+  input_path: ./slide.tif
+  output_path: tumor_001.json
+  patch:
+    size: 2048
+    stride: 2000
+  preprocessing:
+    downsample: 32
+    h_thresh: 1.0
+    e_thresh: 0.0
+    d_thresh: 0.5
+    disk_size: 20
+  postprocessing:
+    threshold: 0.3
+model:
+  window:
+    size: 256
+    stride: 192
+loader:
+  infer:
+    batch_size: 1
+    num_workers: 8
+    drop_last: False
+    shuffle: False

@@ -1,0 +1,3 @@
+name: pannuke
+root: /path/to/pannuke/
+num_classes: 5

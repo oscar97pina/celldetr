@@ -1,0 +1,9 @@
+cython
+openslide-python
+scikit-image
+opencv-python
+wandb
+scipy
+pillow
+pycocotools
+timm

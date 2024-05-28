@@ -1,0 +1,18 @@
+name: deformable_detr
+num_queries: 900
+postprocess: label_topk
+with_box_refine: True
+two_stage: True
+hidden_dim: 256
+num_feature_levels: 4
+aux_loss: True
+position_embedding: 
+  name: sine
+transformer:
+  dim_feedforward : 1024
+  nheads: 8
+  dropout: 0.1
+  enc_layers: 6
+  dec_layers: 6
+  enc_n_points: 4
+  dec_n_points: 4

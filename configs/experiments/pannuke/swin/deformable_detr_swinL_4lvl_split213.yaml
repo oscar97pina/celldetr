@@ -1,0 +1,18 @@
+__base__:
+  - configs/experiments/pannuke/swin/deformable_detr_swinL_4lvl_split123.yaml
+experiment:
+  wandb: True
+  project: deformable_celldetr
+  name: defdetr_swinL_4lvl_split213
+  output_dir: ./
+  output_name: defdetr_swinL_4lvl_split213.pth
+dataset:
+  train:
+    fold: fold2
+  val:
+    fold: fold1
+  test:
+    fold: fold3
+transforms:
+  normalize:
+    __file__: configs/base/data/normalize/pannuke_2.yaml
