@@ -619,7 +619,7 @@ class SwinTransformerBackbone(BackboneBase):
 
 #def build_swin_transformer(modelname, pretrain_img_size, **kw):
 def build_swin_backbone(cfg):
-    assert cfg.model.backbone.name in ['swin_T_224_1k', 'swin_B_224_22k', 'swin_B_384_22k', 'swin_L_224_22k', 'swin_L_384_22k']
+    assert cfg.model.backbone.name in ['swin_T_224_1k', 'swin_S_224_1k', 'swin_B_224_1k', 'swin_B_384_22k', 'swin_L_224_22k', 'swin_L_384_22k']
 
     model_param_dict = {
         'swin_T_224_1k': dict(
@@ -637,12 +637,32 @@ def build_swin_backbone(cfg):
             norm_layer=nn.LayerNorm,
             ape=False,
             patch_norm=True,
-            out_indices = cfg.model.backbone.return_layers,
+            out_indices = [l-1 for l in cfg.model.backbone.return_layers],
             frozen_stages = cfg.model.backbone.frozen_stages,
             dilation = cfg.model.backbone.dilation,
             use_checkpoint = False
-        ),        
-        'swin_B_224_22k': dict(
+        ),
+        'swin_S_224_1k': dict(
+            pretrain_img_size=224,
+            embed_dim=96,
+            depths=[2, 2, 18, 2],
+            num_heads=[3, 6, 12, 24],
+            window_size=7,
+            mlp_ratio=4,
+            qkv_bias=True,
+            qk_scale=None,
+            drop_rate=0.,
+            attn_drop_rate=0.,
+            drop_path_rate=0.2,
+            norm_layer=nn.LayerNorm,
+            ape=False,
+            patch_norm=True,
+            out_indices = [l-1 for l in cfg.model.backbone.return_layers],
+            frozen_stages = cfg.model.backbone.frozen_stages,
+            dilation = cfg.model.backbone.dilation,
+            use_checkpoint = False
+        ),
+        'swin_B_224_1k': dict(
             pretrain_img_size=224,
             embed_dim=128,
             depths=[ 2, 2, 18, 2 ],

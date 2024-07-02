@@ -27,7 +27,7 @@ def load_sd_backbone(backbone, checkpoint):
     # therefore we first remove backbone.0.body and then backbone.0
     print(f"\t loading backbone with {len(checkpoint)} keys...")
     checkpoint = {
-        k.replace('backbone.0.body.', '').replace('backbone.0.', ''): v\
+        k.replace('backbone.0.body.', '').replace('backbone.0.', '').replace('backbone.',''): v\
         for k, v in checkpoint.items() if 'backbone' in k
     }
     # load state dict

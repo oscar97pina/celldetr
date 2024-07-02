@@ -35,7 +35,7 @@ class Consep(torchvision.datasets.CocoDetection, BaseCellCOCO):
         return CONSEP_NUCLEI
 
     def image_size(self, image_id=None, idx=None):
-        return torch.tensor([1000, 1000])
+        return torch.tensor([1024, 1024])
 
     def __len__(self):
         return super(Consep, self).__len__()
@@ -67,6 +67,9 @@ class Consep(torchvision.datasets.CocoDetection, BaseCellCOCO):
         # convert to tensor
         transforms = v2.Compose([
             v2.ToImage(),
+            v2.Resize((1024, 1024),
+                      interpolation=v2.InterpolationMode.BICUBIC,
+                      antialias=True),
             v2.ToDtype(torch.float32, scale=True)])
         img = transforms(img)
         return img
@@ -78,6 +81,9 @@ def build_consep_dataset(cfg, split='train'):
     num_classes = cfg.dataset[split].num_classes
     # build transforms
     transforms = build_transforms(cfg, is_train = (split=='train') )
+    transforms.transforms.insert(3, v2.Resize((1024,1024), 
+                                            interpolation=v2.InterpolationMode.BICUBIC,
+                                            antialias=True ))
     # build dataset
     if num_classes == 1:
         dataset = DetectionWrapper(Consep)(root, cfg.dataset[split].fold,

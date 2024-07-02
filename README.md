@@ -8,7 +8,6 @@ Cell-DETR is a novel approach for efficient cell detection and classification in
 
 - [Installation](#installation)
 - [Usage](#usage)
-- [Contributing](#contributing)
 - [License](#license)
 
 ## Installation
@@ -64,6 +63,13 @@ The entire code is based on yaml configuration files. You can find an explanatio
 - In the [configs/experiments/](configs/experiments/) folder you can find the configuration files for the experiments reported in the paper.
 
 If you want to use your own data, models, or others, consider writing the re-usable independent configuration pieces such as datasets into [configs/base/](configs/base/) and then the configuration for your experiments in [configs/experiments/](configs/experiments/).
+
+### Pre-trained models
+The pre-trained model we provide for inference is trained on 80% of PanNuke, taking samples from each of the folds. The detection F1-Score corresponds to the remaining 20% of the data.
+
+| Backbone | Backbone levels | DETR levels | F1-det | config | weights |
+|----------|----------|----------|----------|----------|----------|
+|   Swin-L  |   4  |  4  |   83.06  |   [config](configs/public/deformable_detr_swinL_4lvl_pannuke.yaml)  | [weights](https://drive.google.com/file/d/13ud0-KD2f70p7x_c4WdtWXvLR-0YFVaH) |
 
 ### Training and testing
 For training and testing, you must create a configuration file in which you specify basic configuration of the [experiment](docs/experiment.md), the [dataset](docs/dataset.md), the [model](docs/model.md), the loss and the [loaders](docs/). You can find an example on [configs/experiments/pannuke/swin/deformable_detr_swinL_35lvl_split123.yaml](configs/experiments/pannuke/swin/deformable_detr_swinL_35lvl_split123.yaml). To run the training, we recommend creating your own configuration file, in which you'll have the modify the data directory and model checkpoints, and run:

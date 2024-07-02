@@ -31,7 +31,7 @@ class MonusegDetection(torchvision.datasets.CocoDetection, BaseCellCOCO):
         return ["nuclei"]
 
     def image_size(self, image_id=None, idx=None):
-        return torch.tensor([1000, 1000])
+        return torch.tensor([1024, 1024])
 
     def __len__(self):
         return super(MonusegDetection, self).__len__()
@@ -63,6 +63,9 @@ class MonusegDetection(torchvision.datasets.CocoDetection, BaseCellCOCO):
         # convert to tensor
         transforms = v2.Compose([
             v2.ToImage(),
+            v2.Resize((1024, 1024),
+                      interpolation=v2.InterpolationMode.BICUBIC,
+                      antialias=True),
             v2.ToDtype(torch.float32, scale=True)])
         img = transforms(img)
         return img
@@ -73,6 +76,9 @@ def build_monuseg_dataset(cfg, split='train'):
     root = cfg.dataset[split].root
     # build transforms
     transforms = build_transforms(cfg, is_train = (split=='train') )
+    transforms.transforms.insert(3, v2.Resize((1024,1024), 
+                                              interpolation=v2.InterpolationMode.BICUBIC,
+                                              antialias=True ))
     # build dataset
     dataset = MonusegDetection(root, cfg.dataset[split].fold,
                     transforms=transforms)
