@@ -57,7 +57,9 @@ def test(cfg):
 
     # evaluate
     test_stats = evaluate_detection(
-        model, criterion, postprocessors, test_loader, device, thresholds=cfg.evaluation.thresholds)
+        model, criterion, postprocessors, test_loader, device, 
+        thresholds=cfg.evaluation.thresholds, 
+        max_pair_distance=cfg.evaluation.max_pair_distance)
     stats = {
         **{f'test_{k}': v for k, v in test_stats.items()}
     }

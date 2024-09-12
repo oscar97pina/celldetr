@@ -1,0 +1,18 @@
+__base__:
+  - configs/public/deformable_detr_swinB_4lvl_050mpp_pannuke.yaml
+dataset:
+  train: 
+    __file__: configs/base/data/consep.yaml
+    fold: train
+  val:
+    __file__: configs/base/data/consep.yaml
+    fold: val
+  test:
+    __file__: configs/base/data/consep.yaml
+    fold: test
+model:
+  window:
+    size: 128
+    stride: 96
+  classmap:
+    __file__: configs/experiments/consep/classmap.yaml

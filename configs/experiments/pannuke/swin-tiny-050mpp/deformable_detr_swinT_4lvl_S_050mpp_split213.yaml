@@ -1,0 +1,9 @@
+__base__:
+  - configs/experiments/pannuke/swin-tiny/deformable_detr_swinT_4lvl_S_split213.yaml
+experiment:
+  name: defdetr_swinT_4lvl_S_050mpp_split213
+  output_name: defdetr_swinT_4lvl_S_050mpp_split213.pth
+evaluation:
+  max_pair_distance: 6
+transforms:
+  rescale: 0.5

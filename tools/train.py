@@ -144,7 +144,9 @@ def train(cfg):
             #val_stats, _ = evaluate(
             #    model, criterion, postprocessors, val_loader, val_dataset.coco, device, cfg.experiment.output_dir)
             val_stats = evaluate_detection(
-                model, criterion, postprocessors, val_loader, device, thresholds=cfg.evaluation.thresholds)
+                model, criterion, postprocessors, val_loader, device,
+                  thresholds=cfg.evaluation.thresholds,
+                  max_pair_distance=cfg.evaluation.max_pair_distance)
                         
         # log on wandb
         if cfg.experiment.wandb and is_main_process():

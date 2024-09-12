@@ -82,7 +82,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
     return {k: meter.global_avg for k, meter in metric_logger.meters.items()}
 
 @torch.no_grad()
-def evaluate_detection(model, criterion, postprocessors, data_loader, device, thresholds=[0.5]):
+def evaluate_detection(model, criterion, postprocessors, data_loader, device, thresholds=[0.5], max_pair_distance=12.0):
     model.eval()
     criterion.eval()
 
@@ -95,6 +95,7 @@ def evaluate_detection(model, criterion, postprocessors, data_loader, device, th
         #'map' : torchmetrics.detection.MeanAveragePrecision(box_format='cxcywh'),
         'f'   : CellDetectionMetric(num_classes=data_loader.dataset.num_classes, 
                                  thresholds=thresholds,
+                                 max_pair_distance=max_pair_distance,
                                  class_names=data_loader.dataset.class_names)
     }
     for samples, targets in metric_logger.log_every(data_loader, 10, header):
@@ -119,7 +120,9 @@ def evaluate_detection(model, criterion, postprocessors, data_loader, device, th
         metric_logger.update(class_error=loss_dict_reduced['class_error'])
 
         # postprocess predictions
-        orig_target_sizes = torch.stack([data_loader.dataset.image_size(image_id=t["image_id"]) for t in targets], dim=0)
+        #orig_target_sizes = torch.stack([data_loader.dataset.image_size(image_id=t["image_id"]) for t in targets], dim=0)
+        # get target sizes from bounding box canvas size
+        orig_target_sizes = torch.stack([torch.tensor(t["boxes"].canvas_size) for t in targets], dim=0)
         predictions = postprocessors['bbox'](outputs, orig_target_sizes)
         
         # prepare predictions
@@ -130,7 +133,8 @@ def evaluate_detection(model, criterion, postprocessors, data_loader, device, th
         # prepare targets
         for t in targets:
             # get image size
-            img_h, img_w = data_loader.dataset.image_size(image_id=t["image_id"])
+            #img_h, img_w = data_loader.dataset.image_size(image_id=t["image_id"])
+            img_h, img_w = t['boxes'].canvas_size
             # convert boxes
             t['boxes'] = box_ops.denormalize_box(t['boxes'], (img_h, img_w))
         
@@ -188,7 +192,9 @@ def evaluate(model, criterion, postprocessors, data_loader, base_ds, device, out
         metric_logger.update(class_error=loss_dict_reduced['class_error'])
 
         #orig_target_sizes = torch.stack([t["orig_size"] for t in targets], dim=0)
-        orig_target_sizes = torch.stack([data_loader.dataset.image_size(image_id=t["image_id"]) for t in targets], dim=0)
+        #orig_target_sizes = torch.stack([data_loader.dataset.image_size(image_id=t["image_id"]) for t in targets], dim=0)
+        # get target sizes from bounding box canvas size
+        orig_target_sizes = torch.stack([ torch.tensor(t["boxes"].canvas_size) for t in targets], dim=0)
         results = postprocessors['bbox'](outputs, orig_target_sizes)
         if 'segm' in postprocessors.keys():
             target_sizes = torch.stack([t["size"] for t in targets], dim=0)

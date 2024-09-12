@@ -134,6 +134,9 @@ class AttrDict:
 
     def has(self, key):
         return key in self._store_ and self._store_[key] is not None
+    
+    def get(self, key, default=None):
+        return self._store_.get(key, default)
 
     def __str__(self):
         return f"{self.__class__.__name__}({self._store_})"

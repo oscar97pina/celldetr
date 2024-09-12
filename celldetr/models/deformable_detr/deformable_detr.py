@@ -175,10 +175,10 @@ class DeformableDETR(nn.Module):
         outputs_coord = torch.stack(outputs_coords)
 
         out = {'pred_logits': outputs_class[-1], 'pred_boxes': outputs_coord[-1]}
-        if self.aux_loss:
+        if self.aux_loss and self.training:
             out['aux_outputs'] = self._set_aux_loss(outputs_class, outputs_coord)
 
-        if self.two_stage:
+        if self.two_stage and self.training:
             enc_outputs_coord = enc_outputs_coord_unact.sigmoid()
             out['enc_outputs'] = {'pred_logits': enc_outputs_class, 'pred_boxes': enc_outputs_coord}
         return out

@@ -1,0 +1,9 @@
+__base__:
+  - configs/experiments/pannuke/swin-base/deformable_detr_swinB_4lvl_S_split321.yaml
+experiment:
+  name: defdetr_swinB_4lvl_S_050mpp_split321
+  output_name: defdetr_swinB_4lvl_S_050mpp_split321.pth
+evaluation:
+  max_pair_distance: 6
+transforms:
+  rescale: 0.5

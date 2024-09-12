@@ -1,0 +1,10 @@
+__base__:
+  - configs/experiments/pannuke/swin-tiny/deformable_detr_swinT_4lvl_split321.yaml
+experiment:
+  name: defdetr_swinT_35lvl_split321
+  output_dir: ./
+  output_name: defdetr_swinT_35lvl_split321.pth
+model:
+  backbone:
+    __file__: configs/base/model/backbone/swinL_3lvl.yaml
+    name: swin_T_224_1k

@@ -1,0 +1,8 @@
+__base__:
+  - configs/public/deformable_detr_swinB_35lvl_pannuke.yaml
+experiment:
+  name: defdetr_swinT_35lvl_pannuke
+  output_name: defdetr_swinT_35lvl_pannuke.pth
+model:
+  backbone:
+    name: swin_T_224_1k

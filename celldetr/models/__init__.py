@@ -16,8 +16,13 @@ def build_model(cfg):
         from .window import wrap_window_detr
         model, postprocessor = wrap_window_detr(cfg, model, postprocessor)
 
-    # 4 - detection wrapper
-    if cfg.model.has('detection') and cfg.model.detection and cfg.model.num_classes > 1:
+    # 4.1 - classmap
+    if cfg.model.has('classmap') and cfg.model.classmap:
+        from .detection import wrap_classmap_detr
+        classmap = [[0]] + cfg.model.classmap
+        model, criterion = wrap_classmap_detr(model, criterion, classmap)
+    # 4.2 - detection wrapper
+    elif cfg.model.has('detection') and cfg.model.detection and cfg.model.num_classes > 1:
         from .detection import wrap_detection_only_detr
         model, criterion = wrap_detection_only_detr(model, criterion)
     

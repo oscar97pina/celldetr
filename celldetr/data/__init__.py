@@ -51,5 +51,6 @@ def build_loader(cfg, dataset, split='train', collate_fn=collate_fn):
                         batch_size=_loader_cfg.batch_size,
                         num_workers=_loader_cfg.num_workers,
                         drop_last=_loader_cfg.drop_last,
-                        collate_fn=collate_fn)
+                        collate_fn=collate_fn, pin_memory=split=="infer")
+    # pin memory only for inference as if done in train or val, converts tv_tensors to standard torch tensors.
     return loader

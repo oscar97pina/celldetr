@@ -1,0 +1,12 @@
+__base__:
+  - configs/experiments/pannuke/swin/deformable_detr_swinL_4lvl_split321.yaml
+experiment:
+  wandb: True
+  project: deformable_celldetr
+  name: defdetr_swinB_4lvl_split321
+  output_dir: ./
+  output_name: defdetr_swinB_4lvl_split321.pth
+model:
+  backbone:
+    __file__: configs/base/model/backbone/swinL_4lvl.yaml
+    name: swin_B_224_1k

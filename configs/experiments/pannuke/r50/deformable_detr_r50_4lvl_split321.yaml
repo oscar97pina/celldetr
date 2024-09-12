@@ -1,8 +1,8 @@
 __base__:
   - configs/experiments/pannuke/r50/deformable_detr_r50_4lvl_split123.yaml
 experiment:
-  name: defdetr_r50_4lvl_split213
-  output_name: defdetr_r50_4lvl_split213.pth
+  name: defdetr_r50_4lvl_split321
+  output_name: defdetr_r50_4lvl_split321.pth
 dataset:
   folds:
   train:

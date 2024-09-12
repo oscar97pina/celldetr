@@ -1,0 +1,11 @@
+__base__:
+  - configs/experiments/pannuke/swin-base/deformable_detr_swinB_4lvl_split321.yaml
+experiment:
+  name: defdetr_swinB_4lvl_S_split321
+  output_dir: ./
+  output_name: defdetr_swinB_4lvl_S_split321.pth
+model:
+  num_queries: 600
+  transformer:
+    enc_layers: 3
+    dec_layers: 3

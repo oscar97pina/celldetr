@@ -6,6 +6,7 @@ from skimage import color
 import torch
 import torch.nn as nn
 
+import torchvision
 import torchvision.transforms.v2 as v2
 from torchvision.transforms.v2 import functional as F
 from torchvision.transforms.v2._utils import _get_fill, _setup_fill_arg
@@ -16,8 +17,8 @@ def build_transforms(cfg, is_train=True):
     transforms = [v2.ToImage()]
 
     # sanity check
-    transforms.append(v2.SanitizeBoundingBoxes())
     transforms.append(v2.ClampBoundingBoxes())
+    transforms.append(v2.SanitizeBoundingBoxes())
 
     # augmentation when training
     if is_train:
@@ -25,17 +26,23 @@ def build_transforms(cfg, is_train=True):
         transforms.append(build_augmentations(cfg))
 
         # sanity check after augmentations
-        transforms.append(v2.SanitizeBoundingBoxes())
         transforms.append(v2.ClampBoundingBoxes())
+        transforms.append(v2.SanitizeBoundingBoxes())
         
     # convert image and bbox format
     transforms.append(v2.ConvertBoundingBoxFormat(format='CXCYWH'))
     transforms.append(v2.ToDtype(torch.float32, scale=True))
     
+    # resize
+    if cfg.transforms.has('rescale'):
+        transforms.append(Rescale(cfg.transforms.rescale, 
+                            antialias=True,
+                            interpolation=v2.InterpolationMode.BICUBIC))
     # image normalization
-    mean = cfg.transforms.normalize.mean
-    std = cfg.transforms.normalize.std
-    transforms.append(v2.Normalize(mean=mean, std=std))
+    if cfg.transforms.has('normalize'):
+        mean = cfg.transforms.normalize.mean
+        std = cfg.transforms.normalize.std
+        transforms.append(v2.Normalize(mean=mean, std=std))
     # bounding box normalization
     transforms.append(NormalizeBoundingBoxes())
 
@@ -205,3 +212,35 @@ class RandomApply(v2.Transform):
         for t in self.transforms:
             format_string.append(f"    {t}")
         return "\n".join(format_string)
+    
+class Rescale(v2.Transform):
+    def __init__(self, scale, 
+                 max_size=None,
+                 interpolation=v2.InterpolationMode.BILINEAR,
+                 antialias=True) -> None:
+        super().__init__()
+        self.scale = scale
+        self.max_size = max_size
+        self.interpolation = interpolation
+        self.antialias = antialias
+
+    def _get_params(self, flat_inputs):
+        # get image size
+        #h, w = F._get_image_size(flat_inputs)
+        # get image size
+        h, w = flat_inputs[0].shape[-2:]
+        # calculate new size
+        sz = int(self.scale * min(h, w))
+        if self.max_size is not None:
+            sz = min(sz, self.max_size)
+        return dict(size=sz)
+
+    def _transform(self, inpt, params):
+        return self._call_kernel(
+            F.resize,
+            inpt,
+            params['size'],
+            interpolation=self.interpolation,
+            max_size=self.max_size,
+            antialias=self.antialias,
+        )

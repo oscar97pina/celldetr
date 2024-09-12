@@ -70,7 +70,23 @@ class WindowDETR(DeformableDETR):
         # if batch size is smaller than 64 or is multiple, forward directly
         if B <= 64 or B % 64 == 0:
             # run forward of the DeformableDETR
-            return super(WindowDETR, self).forward(samples)        
+            return super(WindowDETR, self).forward(samples)
+
+        # find the max batch size that is multiple of 64 and smaller than B
+        Bw = (B // 64) * 64
+        # forward the first Bw windows
+        outputs = super(WindowDETR, self).forward(
+            NestedTensor(samples.tensors[:Bw], samples.mask[:Bw]))
+        # forward the remaining windows
+        outputs_remaining = super(WindowDETR, self).forward(
+            NestedTensor(samples.tensors[Bw:], samples.mask[Bw:]))
+        # concatenate outputs
+        outputs = dict(
+            pred_logits=torch.cat([outputs['pred_logits'], outputs_remaining['pred_logits']]),
+            pred_boxes=torch.cat([outputs['pred_boxes'], outputs_remaining['pred_boxes']])
+        )
+
+        """
         # get number of batches
         num_batches = (B - 1) // 64 + 1
         # forward by batches of 64 windows
@@ -88,6 +104,7 @@ class WindowDETR(DeformableDETR):
         # concatenate outputs
         outputs = dict(pred_logits=torch.cat([out['pred_logits'] for out in outputs]),
                        pred_boxes=torch.cat([out['pred_boxes'] for out in outputs]))
+        """
         # return
         return outputs
     
@@ -179,6 +196,9 @@ class WindowPostProcess(PostProcess):
 
         num_windows = outputs.get('num_windows', 1)
         image_size = self.window_size + (num_windows - 1) * self.window_stride
+
+        if num_windows == 1:
+            return super(WindowPostProcess, self).forward(outputs, target_sizes)
 
         # reshape logits, boxes and masks if needed
         if pred_logits.ndim == 3 and num_windows > 1:

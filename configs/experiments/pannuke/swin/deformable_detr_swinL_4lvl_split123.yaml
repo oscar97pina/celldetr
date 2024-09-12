@@ -9,6 +9,7 @@ experiment:
 evaluation:
   interval: 10
   best_criteria: th04
+  max_pair_distance: 12
   thresholds:
     - 0.4
 dataset:

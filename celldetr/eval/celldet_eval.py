@@ -62,9 +62,11 @@ class BaseCellMetric(object):
 class CellDetectionMetric(BaseCellMetric):
     def __init__(self, num_classes : int, 
                        thresholds : Union[int, List[int]], 
+                       max_pair_distance : float = 12,
                        class_names : Optional[List[str]] = None,
                        *args, **kwargs):
         super().__init__(num_classes, thresholds, class_names, *args, **kwargs)
+        self.max_pair_distance = max_pair_distance
 
     def _get_values(self):
         # obtain predictions and targets
@@ -117,7 +119,7 @@ class CellDetectionMetric(BaseCellMetric):
 
                 # pairing
                 paired, unpaired_true, unpaired_pred = pair_coordinates(
-                    true_cents_i, pred_cents_i, 12)
+                    true_cents_i, pred_cents_i, self.max_pair_distance)
                 
                 # accumulating
                 true_idx_offset = (

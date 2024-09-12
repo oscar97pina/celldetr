@@ -114,6 +114,9 @@ class ConfigDict(AttrDict):
             # check if it is a boolean
             if value.lower() in ["true", "false"]:
                 return value.lower()=="true"
+            # check if it is none
+            if value.lower() == "none":
+                return None
             # check if it is a number
             try:
                 return int(value)

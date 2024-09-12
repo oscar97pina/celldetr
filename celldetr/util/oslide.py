@@ -31,6 +31,12 @@ def get_slide_best_downsample(slide=None, filename=None, downsample=32):
     downsample = slide.level_downsamples[lvl]
     return lvl, downsample
 
+def get_slide_mpp(slide=None, filename=None):
+    slide = _get_slide(slide=slide, filename=filename)
+    mpp_x = float(slide.properties[openslide.PROPERTY_NAME_MPP_X])
+    mpp_y = float(slide.properties[openslide.PROPERTY_NAME_MPP_Y])
+    return mpp_x, mpp_y
+
 def get_slide_thumbnail(slide=None, filename=None, downsample=32):
     slide = _get_slide(slide=slide, filename=filename)
 

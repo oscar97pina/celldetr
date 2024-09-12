@@ -168,8 +168,9 @@ wandb/
 # notebooks
 notebooks/
 
-# midl
-midl/
+# torch
+*.pth
+*.pt
 
 # private config files
 configs/private

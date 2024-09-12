@@ -1,0 +1,10 @@
+__base__:
+  - configs/public/deformable_detr_swinB_35lvl_pannuke.yaml
+experiment:
+  name: defdetr_swinB_35lvl_S_pannuke
+  output_name: defdetr_swinB_35lvl_S_pannuke.pth
+model:
+  num_queries: 600
+  transformer:
+    enc_layers: 3
+    dec_layers: 3
