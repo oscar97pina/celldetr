@@ -56,7 +56,7 @@ def get_patch_coords(cfg):
         # ** get the downsample factor to scale patch size and stride
         patch_downsample   = round(cfg.inference.patch.mpp / slide_mpp)
         # ** get the patch coordinates
-        coords = oslide.list_patches(mask,
+        coords = oslide.list_patches(slide, mask,
                                     downsample=cfg.inference.preprocessing.downsample,
                                     patch_size=cfg.inference.patch.size * patch_downsample,
                                     stride=cfg.inference.patch.stride * patch_downsample)

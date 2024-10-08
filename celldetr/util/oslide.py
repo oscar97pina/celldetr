@@ -73,22 +73,21 @@ def get_smoothed_hed_tissue_mask(img, h_thresh=1.0, e_thresh=0.0, d_thresh=0.5, 
     return mask
 
 # Return patches from mask
-def list_patches(mask, 
+def list_patches(slide, mask, 
                  downsample=1 , 
                  patch_size=256, 
                  stride=128):
     patches = list()
     # slide dimensions
-    h, w = mask.shape
-    h, w = int(h*downsample), int(w*downsample)
+    x0, y0, w, h = get_slide_bounds(slide=slide)
     # patch dimensions
     patch_size_ds = int(patch_size / downsample)
 
-    for x in range(0, w-patch_size+1, stride):
-        for y in range(0, h-patch_size+1, stride):
+    for x in range(x0, x0+w-patch_size+1, stride):
+        for y in range(y0, y0+h-patch_size+1, stride):
             # get the patch coordinates in downsampled space
-            x_ds = int(x / downsample)
-            y_ds = int(y / downsample)
+            x_ds = int((x-x0) / downsample)
+            y_ds = int((y-y0) / downsample)
             # check if the patch is in the tissue mask
             if mask[y_ds:y_ds+patch_size_ds, x_ds:x_ds+patch_size_ds].sum() > 0:
                 patches.append((x, y))
