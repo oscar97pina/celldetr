@@ -67,12 +67,14 @@ If you want to use your own data, models, or others, consider writing the re-usa
 ### Pre-trained models
 The pre-trained model we provide for inference is trained on 80% of PanNuke, taking samples from each of the folds. The detection F1-Score corresponds to the remaining 20% of the data.
 
-| Backbone | Backbone levels | DETR levels | F1-det | config | weights |
-|----------|----------|----------|----------|----------|----------|
-|   Swin-L  |   4  |  4  |   83.06  |   [config](configs/public/deformable_detr_swinL_4lvl_pannuke.yaml)  | [weights](https://drive.google.com/file/d/13ud0-KD2f70p7x_c4WdtWXvLR-0YFVaH) |
+| Resolution | Backbone | Backbone levels | DETR levels | Layers/Queries | F1-det | config | weights |
+|----------|----------|----------|----------|----------|----------|----------|----------|
+| 0.25mpp  |   Swin-T  |   3  |  4  | 3/600 |   82.67  |   [config](configs/public/deformable_detr_swinT_35lvl_S_pannuke.yaml) | [weights](https://drive.google.com/file/d/18aO6SwQ6bdDKusTbpl6trbtp5cIWm2DC) |
+| 0.50mpp  |   Swin-T  |   4  |  4  | 3/600 |   81.77  |   [config](configs/public/deformable_detr_swinB_4lvl_S_050mpp_pannuke.yaml)| [weights](https://drive.google.com/file/d/1Atnsv6DdrhbjNDE8hW1kdQPkLFUWrA0O) |
+| 0.25mpp  |   Swin-L  |   4  |  4  | 6/900 | 83.06  |   [config](configs/public/deformable_detr_swinL_4lvl_pannuke.yaml)  | [weights](https://drive.google.com/file/d/13ud0-KD2f70p7x_c4WdtWXvLR-0YFVaH) |
 
 ### Training and testing
-For training and testing, you must create a configuration file in which you specify basic configuration of the [experiment](docs/experiment.md), the [dataset](docs/dataset.md), the [model](docs/model.md), the loss and the [loaders](docs/). You can find an example on [configs/experiments/pannuke/swin/deformable_detr_swinL_35lvl_split123.yaml](configs/experiments/pannuke/swin/deformable_detr_swinL_35lvl_split123.yaml). To run the training, we recommend creating your own configuration file, in which you'll have the modify the data directory and model checkpoints, and run:
+For training and testing, you must create a configuration file in which you specify basic configuration of the [experiment](docs/experiment.md), the [dataset](docs/dataset.md), the [model](docs/model.md), the loss and the [loaders](docs/). You can find an example on [this config file](configs/experiments/pannuke/swin/deformable_detr_swinL_35lvl_split123.yaml). To run the training, we recommend creating your own configuration file, in which you'll have the modify the data directory and model checkpoints, and run:
 
 ```bash
 python3 -m torch.distributed.launch --use-env --nproc-per-node=NUM_GPUs tools/train.py \
@@ -94,13 +96,15 @@ python3 -m torch.distributed.launch --use-env --nproc-per-node=NUM_GPUs tools/tr
 Testing is based on the same configuration file that has been used for training, but calling the [tools/eval.py](tools/eval.py) script rather than the training one. Note that for the evaluation, the training must have been run previously and ended successfully. Now, the checkpoints specified to the model and backbone configurations will be ignored, but the output checkpoint will be used when initializing the model.
 
 ### Inference on WSIs
-Inference on WSIs is very easy! You just need to create a configuration file that extends (with ```__base__```) an existing configuration file used for training your model, and then include the configuration for the WSI, the model window parameters (for window detection) and the ```infer``` loader configuration. See [docs/inference.md](docs/inference.md). You can find an example here for a slide of the camelyon dataset [configs/camelyon/deformable_detr_swinL.yaml](configs/experiments/camelyon/deformable_detr_swinL_4lvl.yaml).
+Inference on WSIs is very easy! You just need to create a configuration file that extends (with ```__base__```) an existing configuration file provided jointly with the model weights (see Pre-trained models table above), the model window parameters (for window detection) and the ```infer``` loader configuration. See [docs/inference.md](docs/inference.md).
 
 Then, running is as easy as:
 
 ```bash
 python3 -m torch.distributed.launch --use-env --nproc-per-node=NUM_GPUs tools/infer.py \
-                        --config-file /path/to/config/file
+                        --config-file /path/to/config/file \
+                        --experiment.output_dir /path/model/weights/folder \
+                        --experiment.output_name model_weights_name.pth
 ```
 
 ## Citation
