@@ -2,6 +2,15 @@ import torch
 from ..deformable_detr import DeformableDETR, PostProcess
 from ...util.misc import NestedTensor
 
+import torch
+import torch.nn.functional as F
+from torch import nn
+import math
+
+from ...util import box_ops
+from ...util.misc import (NestedTensor, nested_tensor_from_tensor_list,
+                       accuracy, interpolate, inverse_sigmoid)
+from ...util.distributed import get_world_size, is_dist_avail_and_initialized
 class WindowDETR(DeformableDETR):
     def __init__(self, backbone, transformer, num_classes, num_queries, num_feature_levels,
                  aux_loss=True, with_box_refine=False, two_stage=False,
@@ -14,6 +23,111 @@ class WindowDETR(DeformableDETR):
         self.window_overlap = (window_size - window_stride) / window_size
     
     def forward(self, samples):
+        """
+        This version is different from the original window detr. 
+        Here, the entire tile is fed to the backbone. Then, the windows are defined on the multi-resolution backbone outputs.
+        """
+        if self.training:
+            return super(WindowDETR, self).forward(samples)
+
+        # 1 - obtain the number of windows
+        if samples.tensors.size(-1) > self.window_size:
+            num_windows = (samples.tensors.size(-1) - self.window_size) // self.window_stride + 1
+        else:
+            num_windows = 1
+        
+        # 2 - forward through backbone
+        in_size = samples.tensors.size(-1)
+        if not isinstance(samples, NestedTensor):
+            samples = nested_tensor_from_tensor_list(samples)
+        features, pos = self.backbone(samples)
+
+        # 3 - split features into windows (in the batch dimension)
+        new_features = []
+        new_pos      = []
+        for l, feat in enumerate(features):
+            # obtain size of the feature map
+            map_size = feat.tensors.shape[-1]
+            # split the feature map into windows
+            # adapt the window size and stride to the feature map size
+            window_size = self.window_size * map_size // in_size
+            window_stride = self.window_stride * map_size // in_size
+            # extract windows
+            windows = self.extract_windows(feat, window_size, window_stride)
+            # append to list
+            new_features.append(windows)
+            new_pos.append(self.backbone[1](windows).to(windows.tensors.dtype))
+        # update features and pos
+        features = new_features
+        pos = new_pos
+
+        # 3 - forward though the neck
+        srcs = []
+        masks = []
+        for l, feat in enumerate(features):
+            src, mask = feat.decompose() #[s.shape for s in src]
+            srcs.append(self.input_proj[l](src))
+            masks.append(mask)
+            assert mask is not None
+        if self.num_feature_levels > len(srcs):
+            _len_srcs = len(srcs)
+            for l in range(_len_srcs, self.num_feature_levels):
+                if l == _len_srcs:
+                    src = self.input_proj[l](features[-1].tensors)
+                else:
+                    src = self.input_proj[l](srcs[-1])
+                #m = samples.mask
+                m = torch.clone(masks[-1])
+                mask = F.interpolate(m[None].float(), size=src.shape[-2:]).to(torch.bool)[0]
+                pos_l = self.backbone[1](NestedTensor(src, mask)).to(src.dtype)
+                srcs.append(src)
+                masks.append(mask)
+                pos.append(pos_l)
+        
+        query_embeds = None
+        if not self.two_stage:
+            query_embeds = self.query_embed.weight
+        
+        # make sure that forward runs with batches of size multiple to 64
+        # get number of windows
+        B = srcs[0].shape[0]
+        # if batch size is smaller than 64 or is multiple, forward directly
+        if B <= 64 or B % 64 == 0:
+            outputs = self.forward_windows(srcs, masks, pos, query_embeds)
+        else:
+            Bw = (B // 64) * 64 
+            outputs1 = self.forward_windows([s[:Bw] for s in srcs], [m[:Bw] for m in masks], [p[:Bw] for p in pos], query_embeds)
+            outputs2 = self.forward_windows([s[Bw:] for s in srcs], [m[Bw:] for m in masks], [p[Bw:] for p in pos], query_embeds)
+            outputs = dict(
+                pred_logits=torch.cat([outputs1['pred_logits'], outputs2['pred_logits']]),
+                pred_boxes=torch.cat([outputs1['pred_boxes'],   outputs2['pred_boxes']])
+            )
+
+        #hs, init_reference, inter_references, enc_outputs_class, enc_outputs_coord_unact = self.transformer(srcs, masks, pos, query_embeds)
+        
+        # 4 - combine windows / predictions
+        outputs = self.merge_outputs(outputs, num_windows)
+
+        # 5 - compute window prediction mask
+        if num_windows > 1:
+            window_mask = self.get_window_mask(outputs)
+        else:
+            window_mask = torch.ones_like(outputs['pred_boxes'][...,0], dtype=torch.bool)
+
+        # 6 - reshape predictions to match original format
+        # (now we will have more queries per images)
+        B, _, _, Q, L = outputs['pred_logits'].shape
+        outputs['pred_logits'] = outputs['pred_logits'].view(B, -1, L)
+        outputs['pred_boxes']  = outputs['pred_boxes'].view(B, -1, 4)
+        outputs['window_mask'] = window_mask.view(B, -1, 1)
+
+        # 7 - append num_windows to outputs
+        outputs['num_windows'] = num_windows
+
+        return outputs
+
+
+    def old_forward(self, samples):
         """ The forward expects a NestedTensor, which consists of:
                - samples.tensor: batched images, of shape [batch_size x 3 x H x W]
                - samples.mask: a binary mask of shape [batch_size x H x W], containing 1 on padded pixels
@@ -57,6 +171,39 @@ class WindowDETR(DeformableDETR):
         outputs['num_windows'] = num_windows
 
         return outputs
+
+    def forward_windows(self, srcs, masks, pos, query_embeds):
+        hs, init_reference, inter_references, enc_outputs_class, enc_outputs_coord_unact = self.transformer(srcs, masks, pos, query_embeds)
+
+        outputs_classes = []
+        outputs_coords = []
+        for lvl in range(hs.shape[0]):
+            if lvl == 0:
+                reference = init_reference
+            else:
+                reference = inter_references[lvl - 1]
+            reference = inverse_sigmoid(reference)
+            outputs_class = self.class_embed[lvl](hs[lvl])
+            tmp = self.bbox_embed[lvl](hs[lvl])
+            if reference.shape[-1] == 4:
+                tmp += reference
+            else:
+                assert reference.shape[-1] == 2
+                tmp[..., :2] += reference
+            outputs_coord = tmp.sigmoid()
+            outputs_classes.append(outputs_class)
+            outputs_coords.append(outputs_coord)
+        outputs_class = torch.stack(outputs_classes)
+        outputs_coord = torch.stack(outputs_coords)
+
+        out = {'pred_logits': outputs_class[-1], 'pred_boxes': outputs_coord[-1]}
+        if self.aux_loss and self.training:
+            out['aux_outputs'] = self._set_aux_loss(outputs_class, outputs_coord)
+
+        if self.two_stage and self.training:
+            enc_outputs_coord = enc_outputs_coord_unact.sigmoid()
+            out['enc_outputs'] = {'pred_logits': enc_outputs_class, 'pred_boxes': enc_outputs_coord}
+        return out
 
     def _forward_windows(self, samples):
         """
@@ -108,26 +255,30 @@ class WindowDETR(DeformableDETR):
         # return
         return outputs
     
-    def extract_windows(self, samples : NestedTensor):
-        samples.tensors = self._extract_windows(samples.tensors)
-        samples.mask    = self._extract_windows(samples.mask.unsqueeze(1)).squeeze(1)
+    def extract_windows(self, samples : NestedTensor, window_size=None, window_stride=None):
+        samples.tensors = self._extract_windows(samples.tensors, window_size, window_stride)
+        samples.mask    = self._extract_windows(samples.mask.unsqueeze(1), window_size, window_stride).squeeze(1)
         return samples
     
-    def _extract_windows(self, x : torch.Tensor):
+    def _extract_windows(self, x : torch.Tensor, window_size=None, window_stride=None):
         """
         Split the image into overlapped windows.
         Concat all windows along batch dimension
         (similar to window attention in SwinTransformer).
         """
+        if window_size is None:
+            window_size = self.window_size
+        if window_stride is None:
+            window_stride = self.window_stride
         B, C, H, W = x.shape
         # compute windows
-        windows = x.unfold(2, self.window_size, self.window_stride).unfold(3, self.window_size, self.window_stride)
+        windows = x.unfold(2, window_size, window_stride).unfold(3, window_size, window_stride)
         # reshape windows
-        windows = windows.contiguous().view(B, C, -1, self.window_size, self.window_size)
+        windows = windows.contiguous().view(B, C, -1, window_size, window_size)
         # transpose windows
         windows = windows.transpose(1, 2)
         # reshape windows
-        windows = windows.contiguous().view(-1, C, self.window_size, self.window_size)
+        windows = windows.contiguous().view(-1, C, window_size, window_size)
         return windows
     
     def merge_outputs(self, outputs, num_windows):

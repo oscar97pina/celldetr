@@ -120,6 +120,10 @@ def load_inference_model(cfg):
     # load checkpoint
     ckpt = ckpt['model'] if 'model' in ckpt else ckpt
 
+    # remove "module." prefix from keys (if any)
+    if list(ckpt.keys())[0].startswith('module.'):
+        ckpt = {k.replace('module.', ''): v for k, v in ckpt.items()}
+
     missing_keys, unexpected_keys = model.load_state_dict(ckpt, strict=True)
     print(f"\t # model keys: {len(model.state_dict().keys())}, # checkpoint keys: {len(ckpt.keys())}")
     print(f"\t # missing keys: {len(missing_keys)}, # unexpected keys: {len(unexpected_keys)}")

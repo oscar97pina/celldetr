@@ -1,8 +1,8 @@
-# Cell-DETR: Efficient cell detection and classification in WSIs with transformers
+# From Pixels to Cells: Rethinking Cell Detection in Histopathology with Transformers
 
 ## Description
 
-Cell-DETR is a novel approach for efficient cell detection and classification in Whole Slide Images (WSIs) using transformers. Unlike traditional segmentation methods, Cell-DETR focuses on detecting and classifying nuclei, crucial for understanding cell interactions and distributions. With state-of-the-art performance on established benchmarks, our method enables scalable diagnosis pipelines by significantly reducing computational burdens and achieving x3.4 faster inference times on large WSI datasets.
+Accurate and efficient cell nuclei detection and classification in histopathological Whole Slide Images (WSIs) are essential for enabling large-scale, quantitative pathology workflows. While segmentation-based methods are commonly used for this task, they introduce substantial computational overhead and produce detailed masks that are often unnecessary for clinical interpretation. In this work, we propose a paradigm shift from segmentation to direct detection, introducing CellNuc-DETR, a transformer-based model that localizes and classifies nuclei without relying on segmentation masks or expensive post-processing. By focusing on clinically relevant outputs—nuclear location and type—CellNuc-DETR achieves significant gains in both accuracy and inference speed. To scale to full-slide inference, we develop a novel strategy that partitions feature maps, rather than images, enabling efficient processing of large tiles with improved context aggregation. We evaluate CellNuc-DETR on PanNuke, CoNSeP, and MoNuSeg, demonstrating state-of-the-art performance, strong generalization across tissue and stain variations, and up to 10x faster inference than segmentation-based methods. Our approach bridges the gap between generic detection frameworks and the practical demands of digital pathology, offering a scalable, accurate, and clinically viable solution for cell-level analysis in WSIs.
 
 ## Table of Contents
 
@@ -46,6 +46,7 @@ celldetr/
 |-- tools/                   # Contains scripts for training, evaluation, and inference
 |   |-- train.py             # Training on COCO format dataset
 |   |-- eval.py              # Evaluation on COCO format dataset
+|   |-- finetune.py          # Fine-tuning on COCO dataset, can be split into stages.
 |   |-- infer.py             # Inference on WSIs
 |-- eval/                    # Evaluation module for evaluating model performance (COCO and Cell detection)
 |-- util/                    # Utility functions and modules used throughout the project
@@ -110,6 +111,15 @@ python3 -m torch.distributed.launch --use-env --nproc-per-node=NUM_GPUs tools/in
 ## Citation
 If you find this work helpful in your research, please consider citing us:
 ```bash
+@misc{pina2025cellnucleidetectionclassification,
+      title={Cell Nuclei Detection and Classification in Whole Slide Images with Transformers}, 
+      author={Oscar Pina and Eduard Dorca and Verónica Vilaplana},
+      year={2025},
+      eprint={2502.06307},
+      archivePrefix={arXiv},
+      primaryClass={cs.CV},
+      url={https://arxiv.org/abs/2502.06307}, 
+}
 @inproceedings{
        pina2024celldetr,
        title={Cell-{DETR}: Efficient cell detection and classification in {WSI}s with transformers},
